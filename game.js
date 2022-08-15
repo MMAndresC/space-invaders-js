@@ -14,6 +14,8 @@ let COVER = [
 ];
 
 let PLAYER = { x: 0, y: 0 };
+let intervalMovEnemies = 0;
+let speed = 1000;
 
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -24,10 +26,10 @@ const drawEnemies = async() => {
     let top = 10;
     const container = document.querySelector('.battlefield');
     for(let line = 0; line < 5; line ++){
-        let left = 7;
+        let left = 10;
         for(let column = 0; column < 11; column ++){
             //Dibujar cada marcianito dentro de la linea creada anteriormente
-            await sleep(20); //Para el efecto de que se generan en el momento de carga
+            await sleep(20); //Para que los vaya mostrando poco a poco
             const enemy = document.createElement('img');
             enemy.classList = `enemy enemy-${line}`;
             enemy.id = cont;
@@ -38,7 +40,7 @@ const drawEnemies = async() => {
             if(column === 0) ENEMIES[line].y = enemy.offsetTop;
             ENEMIES[line].x.push(enemy.offsetLeft); 
             cont ++;
-            left += 8;
+            left += 7.5;
             //console.log(enemy.offsetParent);
         };
         top += 7;
@@ -54,6 +56,7 @@ const drawCover = () => {
 
     for(let numCover = 0; numCover < 4; numCover++){
         let leftSection = leftCover;
+        //Para poder controlar que seccion del cover se destruye lo formo con 4x4 divs
         for(let i = 1; i <= 16; i++){
             const sectionCover = document.createElement('div');
             sectionCover.classList = `cover-section`;
@@ -99,12 +102,57 @@ const addKeyboardListener = () => {
                 break;
             }
             case ' ' : {
-        
+                
                 break;
             }
             default: break;
         }
     });
+}
+
+const moveXEnemies = (inc) => {
+    const enemies = document.querySelectorAll('.enemy');
+    for(let i = enemies.length - 1; i >= 0; i--){
+        let left = Number(enemies[i].style.left.slice(0, enemies[i].style.left.length - 1))
+        enemies[i].style.left = left + inc + '%';
+        const line = enemies[i].classList[1].slice(-1);
+        enemies[i].classList.toggle(`moving-${line}`);
+    }
+}
+
+const moveYEnemies = () => {
+    const enemies = document.querySelectorAll('.enemy');
+    for(let i = enemies.length - 1; i >= 0; i--){
+        let top = Number(enemies[i].style.top.slice(0, enemies[i].style.top.length - 1))
+        enemies[i].style.top = top + 1 + '%';
+        const line = enemies[i].classList[1].slice(-1);
+        enemies[i].classList.toggle(`moving-${line}`);
+    }
+}
+
+const movementEnemies = () => {
+    const enemies = document.querySelectorAll('.enemy');
+    let direction = 'rigth';
+    
+    intervalMovEnemies = setInterval(async() => {
+        if( direction === 'rigth'){
+            moveXEnemies(1);
+            if(enemies[enemies.length - 1].style.left === '90%'){
+                direction = 'left';
+                await sleep(speed);
+                moveYEnemies();
+                await sleep(speed);
+            }
+        }else{
+            moveXEnemies(-1);
+            if(enemies[0].style.left === '5%'){
+                direction = 'rigth';
+                await sleep(speed);
+                moveYEnemies();
+                await sleep(speed);
+            }
+        }
+    }, speed);
 }
 
 const init = async() => {
@@ -115,6 +163,7 @@ const init = async() => {
     console.log(ENEMIES);
     //Funciones para poner en marcha el juego
     //Movimiento enemigos
+    movementEnemies();
     addKeyboardListener();
     //Comienza el juego, terminara cuando todos los marcianos esten muertos o el player
 

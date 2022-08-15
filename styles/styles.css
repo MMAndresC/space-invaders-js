@@ -19,7 +19,7 @@ body {
   flex-direction: column;
   align-items: center;
   border: 1px solid black;
-  width: 540px;
+  width: 600px;
   height: 750px;
   margin: 5% 0;
 }
@@ -90,6 +90,22 @@ body {
   width: 30px;
   height: 28px;
   content: url("../images/shipTypeCmov1.png");
+}
+
+.moving-0 {
+  width: 23px;
+  height: 25px;
+  content: url("../images/ship_typeAmov2.png");
+}
+.moving-1, .moving-2 {
+  width: 30px;
+  height: 28px;
+  content: url("../images/shipTypeBmov2.png");
+}
+.moving-3, .moving-4 {
+  width: 30px;
+  height: 28px;
+  content: url("../images/shipTypeCmov2.png");
 }
 
 .cover-section {
