@@ -1,4 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+:root {
+  --main-bg-color: rgb(6, 0, 0);
+  --test-bg-aux: white;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -115,24 +120,39 @@ body {
   position: absolute;
 }
 
-#section-0-1, #section-1-1, #section-2-1, #section-3-1 {
-  background-color: white;
+.border-up-left {
+  background-color: var(--test-bg-aux);
   background-image: URL("../images/borderLeft.png");
 }
-
-#section-0-4, #section-1-4, #section-2-4, #section-3-4 {
-  background-color: white;
+.border-up-rigth {
+  background-color: var(--test-bg-aux);
   background-image: URL("../images/borderRigth.png");
 }
 
-#section-0-14, #section-1-14, #section-2-14, #section-3-14 {
-  background-color: white;
+.border-down-left {
+  background-color: var(--test-bg-aux);
   background-image: URL("../images/arcLeft.png");
 }
-
-#section-0-15, #section-1-15, #section-2-15, #section-3-15 {
-  background-color: white;
+.border-down-rigth {
+  background-color: var(--test-bg-aux);
   background-image: URL("../images/arcRigth.png");
+}
+
+.damaged-section-down {
+  background-color: var(--test-bg-aux);
+  background-image: URL("../images/first_impact_down.png");
+}
+
+.destroyed-section-down {
+  visibility: hidden;
+}
+
+.explosion {
+  background-color: var(--main-bg-color);
+  background-size: cover;
+  background-position: center;
+  background-image: URL("../images/explosion.png");
+  transition: ease-out 0.5s;
 }
 
 .player {
@@ -168,4 +188,11 @@ body {
 .lifes .credit-number {
   color: rgb(6, 250, 250);
   font-size: 1.2rem;
+}
+
+.beam-player {
+  width: 2px;
+  height: 10px;
+  background-color: rgb(6, 250, 250);
+  position: absolute;
 }/*# sourceMappingURL=styles.css.map */

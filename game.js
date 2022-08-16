@@ -7,10 +7,10 @@ let ENEMIES = [
 ];
 
 let COVER = [
-    { numCover: 0, x: [], y: [] },
-    { numCover: 1, x: [], y: [] },
-    { numCover: 2, x: [], y: [] },
-    { numCover: 3, x: [], y: [] },
+    { x: [], y: [], impacts: [] },
+    { x: [], y: [], impacts: [] },
+    { x: [], y: [], impacts: [] },
+    { x: [], y: [], impacts: [] },
 ];
 
 let PLAYER = { 
@@ -19,7 +19,13 @@ let PLAYER = {
 };
 
 let intervalMovEnemies = 0;
+let intervalBeamMov = 0;
+let beamActive = false;
 let speed = 1000;
+
+const MEASUREMENT_SECTION_COVER = 13;
+const HEIGTH_BEAM_PLAYER = 10;
+const NUMBER_SECTIONS_COVER = 16;
 
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -72,54 +78,138 @@ const drawCover = () => {
             sectionCover.style.left = leftSection + 'px';
             COVER[numCover].x.push(leftSection);
             COVER[numCover].y.push(topSection);
+            COVER[numCover].impacts.push(0);
             if(i % 4 === 0){
                 leftSection = leftCover;
                 topSection += 13;
             }else{
                 leftSection += 13;
             }
-            //console.log(sectionCover.offsetParent);
+            if(i === 1) sectionCover.classList.add('border-up-left');
+            if(i === 4) sectionCover.classList.add('border-up-rigth');
+            if(i === 14) sectionCover.classList.add('border-down-left');
+            if(i === 15) sectionCover.classList.add('border-down-rigth');
         }
         leftCover += 130;
         topSection = topCover;
     } 
 }
 
+const destroyBeam = () => {
+    const beam = document.querySelector('.beam-player');
+    clearInterval(intervalBeamMov);
+    beam.remove();
+    beamActive = false;
+}
+
+const checkCollisionCover = async(left, top, initialPosition) => {
+    let notFound = true;
+    let numCover;
+    let index = -1;
+
+    COVER.forEach((cover, nCover) => {
+        if(left >= cover.x[0] && left <= cover.x[cover.x.length - 1] + MEASUREMENT_SECTION_COVER) {
+            numCover = nCover;
+            index = initialPosition - 1;
+        }
+    });
+
+    while(notFound && index >= 0){   
+    
+        if(left >= COVER[numCover].x[index] && left <= COVER[numCover].x[index] + MEASUREMENT_SECTION_COVER){
+            if(top >= COVER[numCover].y[index] && top <= COVER[numCover].y[index] + MEASUREMENT_SECTION_COVER){
+               const section = document.querySelector(`#section-${numCover}-${index + 1}`);
+                
+               switch(COVER[numCover].impacts[index]){
+                case 0: {
+                    notFound = false;
+                    COVER[numCover].impacts[index] = 1;
+                    destroyBeam();
+                    section.classList.toggle('explosion');
+                    await sleep(200);
+                    section.classList.toggle('explosion');
+                    section.classList.add('damaged-section-down');
+                    break;
+                }
+                case 1: {
+                    notFound = false;
+                    COVER[numCover].impacts[index] = 2;
+                    destroyBeam();
+                    section.classList.toggle('explosion');
+                    await sleep(210);
+                    section.classList.toggle('explosion');
+                    section.classList.add('destroyed-section-down');
+                    break;
+                }
+                default: break;
+               }
+            }
+        }
+        index--;
+    }
+}
+
+const calculateCollisionBeam = (left, top) => {
+    //comprobar si se golpea los covers
+    if(top >= COVER[0].y[0] + HEIGTH_BEAM_PLAYER) checkCollisionCover(left, top, NUMBER_SECTIONS_COVER);
+}
+
+const shootToEnemies = (left, top) => {
+    const battlefield = document.querySelector('.battlefield');
+    if(!beamActive){
+        beamActive = true;
+        const beam = document.createElement('div');
+        beam.classList = `beam-player`;
+        beam.style.left = left + 'px';
+        beam.style.top = top + 'px';
+        battlefield.appendChild(beam);
+        intervalBeamMov = setInterval(() => {
+            if(top >= 0){
+                top -= 5;
+                beam.style.top = top + 'px';
+                calculateCollisionBeam(left, top);
+            }else{
+               destroyBeam(); 
+            }
+        },8);
+    }
+}
+
 const addKeyboardListener = () => {
     const player = document.querySelector('.player');
-    let leftPx = (getComputedStyle(player).left);
+    const battlefield = document.querySelector('.battlefield');
+    const maxWidthScreen = battlefield.offsetWidth - player.offsetWidth;
+    let leftPx = getComputedStyle(player).left;
     let left = Number(leftPx.slice(0, leftPx.length - 2)); 
+    let topPx = getComputedStyle(player).top;
+    let top = Number(topPx.slice(0, topPx.length - 2)); 
         
     document.addEventListener('keydown', function(event){
         switch (event.key){
             //controlar el movimiento no puede superar la pantalla establecida
             case 'ArrowRight': {
-                if(left + 10 <= 501.5){
-                    left += 10;
+                if(left + 9 <= maxWidthScreen){
+                    left += 9;
                     player.style.left = left + 'px';
                     PLAYER.x =  Number(getComputedStyle(player).left.slice(0,-2));
                 }
                 break;
             }
             case 'ArrowLeft' : {
-                if(left - 10 >= 1.5){
-                    left -= 10;
+                if(left - 9 >= 1.5){
+                    left -= 9;
                     player.style.left = left + 'px';
                     PLAYER.x =  Number(getComputedStyle(player).left.slice(0,-2));
                 }
                 break;
             }
             case ' ' : {
-                
+                shootToEnemies(left + 16, top - 12);
                 break;
             }
             default: break;
         }
     });
-}
-
-const updateCoordinates = () => {
-   
 }
 
 const moveXEnemies = (inc) => {
@@ -170,6 +260,7 @@ const movementEnemies = () => {
     }, speed);
 }
 
+
 const init = async() => {
     //Funciones para pintar la pantalla
     drawCover();
@@ -181,6 +272,12 @@ const init = async() => {
     //movementEnemies();
     addKeyboardListener();
     //Comienza el juego, terminara cuando todos los marcianos esten muertos o el player
+    //Quedan:
+    //Laser de la nave
+    //Laser de los enemigos
+    //Funcion para detectar las colisiones con el player, los enemigos y el cover
+    //Calcular puntacion e ir acelerando el juego segun se vaya puntuando?? nº de enemigos abatidos???
+    //Movimiento de la nave bonus
    
 }
 
