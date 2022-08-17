@@ -1,9 +1,9 @@
 let ENEMIES = [
-    { points: 30, y: 0, x: [] },
-    { points: 20, y: 0, x: [] },
-    { points: 20, y: 0, x: [] },
-    { points: 10, y: 0, x: [] },
-    { points: 10, y: 0, x: [] }
+    { points: 30, y: 0, x: [], destroyed: [] },
+    { points: 20, y: 0, x: [], destroyed: [] },
+    { points: 20, y: 0, x: [], destroyed: [] },
+    { points: 10, y: 0, x: [], destroyed: []},
+    { points: 10, y: 0, x: [], destroyed: []}
 ];
 
 let COVER = [
@@ -15,17 +15,23 @@ let COVER = [
 
 let PLAYER = { 
     x: Number(getComputedStyle(document.querySelector('.player')).left.slice(0,-2)), 
-    y: Number(getComputedStyle(document.querySelector('.player')).top.slice(0,-2))
+    y: Number(getComputedStyle(document.querySelector('.player')).top.slice(0,-2)),
+    bodyCount: 0
 };
 
 let intervalMovEnemies = 0;
 let intervalBeamMov = 0;
 let beamActive = false;
 let speed = 1000;
+let score = 0;
 
 const MEASUREMENT_SECTION_COVER = 13;
 const HEIGTH_BEAM_PLAYER = 10;
 const NUMBER_SECTIONS_COVER = 16;
+const WIDTH_ENEMY_TYPE_B_C = 30;
+const HEIGTH_ENEMY_TYPE_B_C = 28;
+const WIDTH_ENEMY_TYPE_A = 23;
+const HEIGTH_ENEMY_TYPE_A = 25;
 
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -51,6 +57,7 @@ const drawEnemies = async() => {
             //if(column === 0) ENEMIES[line].y = enemy.offsetTop;
             //ENEMIES[line].x.push(enemy.offsetLeft); 
             ENEMIES[line].x.push(Number(getComputedStyle(enemy).left.slice(0,-2))); 
+            ENEMIES[line].destroyed.push(0);
             cont ++;
             left += 7.5;
             //console.log(enemy.offsetParent);
@@ -95,6 +102,10 @@ const drawCover = () => {
     } 
 }
 
+const endGame = () => {
+    console.log('The End');
+}
+
 const destroyBeam = () => {
     const beam = document.querySelector('.beam-player');
     clearInterval(intervalBeamMov);
@@ -102,7 +113,7 @@ const destroyBeam = () => {
     beamActive = false;
 }
 
-const checkCollisionCover = async(left, top, initialPosition) => {
+const checkCollisionProjectileToCover = async(left, top, initialPosition) => {
     let notFound = true;
     let numCover;
     let index = -1;
@@ -125,9 +136,7 @@ const checkCollisionCover = async(left, top, initialPosition) => {
                     notFound = false;
                     COVER[numCover].impacts[index] = 1;
                     destroyBeam();
-                    section.classList.toggle('explosion');
-                    await sleep(200);
-                    section.classList.toggle('explosion');
+                    animationExplosion(section, false, 200);
                     section.classList.add('damaged-section-down');
                     break;
                 }
@@ -135,10 +144,8 @@ const checkCollisionCover = async(left, top, initialPosition) => {
                     notFound = false;
                     COVER[numCover].impacts[index] = 2;
                     destroyBeam();
-                    section.classList.toggle('explosion');
-                    await sleep(210);
-                    section.classList.toggle('explosion');
-                    section.classList.add('destroyed-section-down');
+                    animationExplosion(section, false, 210);
+                    section.classList.add('destroyed');
                     break;
                 }
                 default: break;
@@ -149,9 +156,40 @@ const checkCollisionCover = async(left, top, initialPosition) => {
     }
 }
 
+const animationExplosion = async(element, isEnemy, ms) => {
+    let destroyClass;
+    isEnemy ? destroyClass = 'explosion-enemy' : destroyClass = 'explosion-section-cover';
+    element.classList.toggle(destroyClass);
+    await sleep(ms);
+    element.classList.toggle(destroyClass);
+}
+
+const checkCollisionBeamToEnemies = (left, top) => {
+    let size;
+    for(let line = 4; line >= 0; line--){
+        if(top >= ENEMIES[line].y && top <= ENEMIES[line].y + HEIGTH_ENEMY_TYPE_A){
+            line === 0 ? size = WIDTH_ENEMY_TYPE_A : size = WIDTH_ENEMY_TYPE_B_C;
+            ENEMIES[line].x.forEach(async(enemy, index) => {
+                if(left >= enemy - 1  && left <= enemy + size + 1 && ENEMIES[line].destroyed[index] != 1){
+                    ENEMIES[line].destroyed[index] = 1;
+                    PLAYER.bodyCount += 1;
+                    destroyBeam();
+                    const enemy = document.querySelector(`.enemy-${line}.position-${index}`);
+                    animationExplosion(enemy, true, 200);
+                    enemy.classList.toggle('destroyed');
+                    score += ENEMIES[line].points;
+                    const spanScore = document.querySelector('.points-player-one');
+                    spanScore.textContent = score;
+                    if(PLAYER.bodyCount === 55) endGame();
+                }
+            });
+        }
+    }
+}
+
 const calculateCollisionBeam = (left, top) => {
-    //comprobar si se golpea los covers
-    if(top >= COVER[0].y[0] + HEIGTH_BEAM_PLAYER) checkCollisionCover(left, top, NUMBER_SECTIONS_COVER);
+    if(top >= COVER[0].y[0] + HEIGTH_BEAM_PLAYER) checkCollisionProjectileToCover(left, top, NUMBER_SECTIONS_COVER);
+    checkCollisionBeamToEnemies(left, top);
 }
 
 const shootToEnemies = (left, top) => {
@@ -169,7 +207,7 @@ const shootToEnemies = (left, top) => {
                 beam.style.top = top + 'px';
                 calculateCollisionBeam(left, top);
             }else{
-               destroyBeam(); 
+                destroyBeam(); 
             }
         },8);
     }
@@ -272,16 +310,14 @@ const init = async() => {
     //movementEnemies();
     addKeyboardListener();
     //Comienza el juego, terminara cuando todos los marcianos esten muertos o el player
+    //El player muere cuando un misil impacte o cuando una nave enemiga choque con el
     //Quedan:
-    //Laser de la nave
     //Laser de los enemigos
-    //Funcion para detectar las colisiones con el player, los enemigos y el cover
-    //Calcular puntacion e ir acelerando el juego segun se vaya puntuando?? nº de enemigos abatidos???
+    //Funcion para detectar las colisiones con el player
+    //Ir acelerando el juego segun se vaya puntuando?? nº de enemigos abatidos???
     //Movimiento de la nave bonus
    
 }
 
 init();
 
-
-//los destruidos visibilidad hidden

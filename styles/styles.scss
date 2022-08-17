@@ -167,16 +167,24 @@ body{
     background-image: URL('../images/first_impact_down.png');
 }
 
-.destroyed-section-down{
+.destroyed{
     visibility: hidden;
 }
 
 .explosion{
-    background-color: var(--main-bg-color);
-    background-size: cover;
-    background-position: center;
-    background-image: URL('../images/explosion.png');
-    transition: ease-out 0.5s;
+
+    &-section-cover{
+        background-color: var(--main-bg-color);
+        background-size: cover;
+        background-position: center;
+        background-image: URL('../images/explosion.png');
+        transition: ease-out 0.5s;
+    }
+
+    &-enemy{
+        content: URL('../images/explosion.png');
+        transition: ease-out 0.2s;
+    }
 }
 
 .player{
