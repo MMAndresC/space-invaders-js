@@ -24,6 +24,8 @@ let intervalBeamMov = 0;
 let beamActive = false;
 let speed = 1000;
 let score = 0;
+let leftFirstEnemy = 0;
+let leftLastEnemy = 10;
 
 const MEASUREMENT_SECTION_COVER = 13;
 const HEIGTH_BEAM_PLAYER = 10;
@@ -54,13 +56,10 @@ const drawEnemies = async() => {
             container.appendChild(enemy);
             //Colocar la posicion x de cada marcianito en la variable ENEMIES
             if(column === 0) ENEMIES[line].y = Number(getComputedStyle(enemy).top.slice(0,-2));
-            //if(column === 0) ENEMIES[line].y = enemy.offsetTop;
-            //ENEMIES[line].x.push(enemy.offsetLeft); 
             ENEMIES[line].x.push(Number(getComputedStyle(enemy).left.slice(0,-2))); 
             ENEMIES[line].destroyed.push(0);
             cont ++;
             left += 7.5;
-            //console.log(enemy.offsetParent);
         };
         top += 7;
     };
@@ -169,7 +168,7 @@ const checkCollisionBeamToEnemies = (left, top) => {
     for(let line = 4; line >= 0; line--){
         if(top >= ENEMIES[line].y && top <= ENEMIES[line].y + HEIGTH_ENEMY_TYPE_A){
             line === 0 ? size = WIDTH_ENEMY_TYPE_A : size = WIDTH_ENEMY_TYPE_B_C;
-            ENEMIES[line].x.forEach(async(enemy, index) => {
+            ENEMIES[line].x.forEach((enemy, index) => {
                 if(left >= enemy - 1  && left <= enemy + size + 1 && ENEMIES[line].destroyed[index] != 1){
                     ENEMIES[line].destroyed[index] = 1;
                     PLAYER.bodyCount += 1;
@@ -177,6 +176,8 @@ const checkCollisionBeamToEnemies = (left, top) => {
                     const enemy = document.querySelector(`.enemy-${line}.position-${index}`);
                     animationExplosion(enemy, true, 200);
                     enemy.classList.toggle('destroyed');
+                    leftFirstEnemy = ENEMIES[0].destroyed.indexOf(0);
+                    leftLastEnemy = ENEMIES[0].destroyed.lastIndexOf(0);
                     score += ENEMIES[line].points;
                     const spanScore = document.querySelector('.points-player-one');
                     spanScore.textContent = score;
@@ -207,6 +208,7 @@ const shootToEnemies = (left, top) => {
                 beam.style.top = top + 'px';
                 calculateCollisionBeam(left, top);
             }else{
+                animationExplosion(beam, false, 500);
                 destroyBeam(); 
             }
         },8);
@@ -274,13 +276,14 @@ const moveYEnemies = () => {
 }
 
 const movementEnemies = () => {
-    const enemies = document.querySelectorAll('.enemy');
     let direction = 'rigth';
     
     intervalMovEnemies = setInterval(async() => {
         if( direction === 'rigth'){
             moveXEnemies(1);
-            if(enemies[enemies.length - 1].style.left === '90%'){
+            const enemy = document.getElementById(`${leftLastEnemy}`);
+            const rigthLimitScreen = Number(enemy.style.left.slice(0, -1));
+            if(rigthLimitScreen >= 90){
                 direction = 'left';
                 await sleep(speed);
                 moveYEnemies();
@@ -288,7 +291,9 @@ const movementEnemies = () => {
             }
         }else{
             moveXEnemies(-1);
-            if(enemies[0].style.left === '5%'){
+            const enemy = document.getElementById(leftFirstEnemy);
+            const leftLimitScreen = Number(enemy.style.left.slice(0, -1));
+            if(leftLimitScreen <= 5){
                 direction = 'rigth';
                 await sleep(speed);
                 moveYEnemies();
