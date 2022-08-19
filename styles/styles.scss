@@ -2,6 +2,8 @@
 
 :root{
     --main-bg-color: rgb(6, 0, 0);
+    --cover-bg-color:  rgb(245, 8, 8);
+    --player-color:  rgb(6, 250, 250);
     --test-bg-aux: white;
 }
 
@@ -38,7 +40,7 @@ body{
     border: 1px solid black;
 
     &-color-player1{
-        color: rgb(6, 250, 250);
+        color: var(--player-color);
     }
 
     &-color-player2{
@@ -131,10 +133,17 @@ body{
     }          
 }
 
+.missile-enemy{
+    width: 2px;
+    height: 10px;
+    background-color: black;//rgb(243, 243, 11);
+    position: absolute;
+}
+
 .cover-section{
     width: 13px;
     height: 13px;
-    background-color: rgb(245, 8, 8);
+    background-color: var(--cover-bg-color);
     position: absolute;
 }
 
@@ -199,7 +208,7 @@ body{
     height: 10%;
     top: 90%;
     position:absolute;
-    border-top:3px solid rgb(245, 8, 8);
+    border-top:3px solid var(--cover-bg-color);
     display: flex;
     justify-content: space-around;
     
@@ -221,7 +230,7 @@ body{
         }
 
         &-number{
-            color: rgb(6, 250, 250);
+            color: var(--player-color);
             font-size: 1.2rem;
         }
     }
@@ -230,7 +239,7 @@ body{
 .beam-player{
     width: 2px;
     height: 10px;
-    background-color: rgb(6, 250, 250) ;
+    background-color: var(--player-color);
     position: absolute;
 }
 

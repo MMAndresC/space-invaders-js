@@ -21,6 +21,7 @@ let PLAYER = {
 
 let intervalMovEnemies = 0;
 let intervalBeamMov = 0;
+let intervalMissilesMov = 0;
 let beamActive = false;
 let speed = 1000;
 let score = 0;
@@ -28,12 +29,13 @@ let leftFirstEnemy = 0;
 let leftLastEnemy = 10;
 
 const MEASUREMENT_SECTION_COVER = 13;
-const HEIGTH_BEAM_PLAYER = 10;
+const HEIGTH_PROJECTILE = 10;
 const NUMBER_SECTIONS_COVER = 16;
 const WIDTH_ENEMY_TYPE_B_C = 30;
 const HEIGTH_ENEMY_TYPE_B_C = 28;
 const WIDTH_ENEMY_TYPE_A = 23;
 const HEIGTH_ENEMY_TYPE_A = 25;
+const TOP_POSITION_PLAYER = 518;
 
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -105,6 +107,65 @@ const endGame = () => {
     console.log('The End');
 }
 
+const createMissile = (coord) => {
+    const battlefield = document.querySelector('.battlefield');
+    const missile = document.createElement('div');
+    missile.classList = 'missile-enemy';
+    missile.style.top = `${coord.y}px`; 
+    missile.style.left = `${coord.x}px`; 
+    battlefield.appendChild(missile);
+    return missile;
+}
+
+const shootToPlayer = async() => {
+    let missiles = [];
+    let missile1;
+    let missile2;
+    let timerSecondMissile = 0;
+    while(missiles?.length !== 2){
+        let randomEnemy = Math.floor(Math.random() * 55);
+        let line = Math.floor(randomEnemy / 11);
+        let index = randomEnemy % 11;
+        if(ENEMIES[line].destroyed[index] === 0)  missiles.push({ 
+            id: randomEnemy,
+            active: false,
+            type: ENEMIES[line].points === 30 ? 'A' : 'BC',
+            x: ENEMIES[line].x[index] + (ENEMIES[line].points === 30 ? (WIDTH_ENEMY_TYPE_A / 2) - 1 : (WIDTH_ENEMY_TYPE_B_C / 2) - 1),
+            y: ENEMIES[line].y + (ENEMIES[line].points === 30 ? WIDTH_ENEMY_TYPE_A : HEIGTH_ENEMY_TYPE_B_C), 
+        }); 
+    }
+    missile1 = createMissile(missiles[0]);
+    console.log(missiles);
+    missiles[0].active = true;
+    intervalMissilesMov = setInterval(() => {
+        if(timerSecondMissile === 4){
+            missile2 = createMissile(missiles[1]);
+            missiles[1].active = true;
+        } 
+        if(missiles[0].active){
+            if(missiles[0].y <= TOP_POSITION_PLAYER){
+                missiles[0].y += 5;
+                missile1.style.top = missiles[0].y + 'px';
+                if(missiles[0].y + HEIGTH_PROJECTILE >= COVER[0].y[0]) checkCollisionProjectileToCover(missiles[0].x, missiles[0].y, 0, false);
+            }else{
+                missile1.remove();
+                missiles[0].active = false;
+            }    
+        }
+        if(missiles[1].active){
+            if(missiles[1].y <= TOP_POSITION_PLAYER){
+                missiles[1].y += 5;
+                missile2.style.top = missiles[1].y + 'px';
+            }else{
+                missile2.remove();
+                missiles[1].active = false;
+            }    
+        }
+        if(!missiles[0].active && !missiles[1].active) clearInterval(intervalMissilesMov);
+        timerSecondMissile++;
+    },12);   
+}
+
 const destroyBeam = () => {
     const beam = document.querySelector('.beam-player');
     clearInterval(intervalBeamMov);
@@ -112,15 +173,15 @@ const destroyBeam = () => {
     beamActive = false;
 }
 
-const checkCollisionProjectileToCover = async(left, top, initialPosition) => {
+const checkCollisionProjectileToCover = async(left, top, initialPosition, isPlayerShooting) => {
     let notFound = true;
     let numCover;
     let index = -1;
 
-    COVER.forEach((cover, nCover) => {
+    COVER.forEach((cover, numCover) => {
         if(left >= cover.x[0] && left <= cover.x[cover.x.length - 1] + MEASUREMENT_SECTION_COVER) {
-            numCover = nCover;
-            index = initialPosition - 1;
+            numCover = numCover;
+            isPlayerShooting ? index = initialPosition - 1 : index = 0;
         }
     });
 
@@ -151,7 +212,7 @@ const checkCollisionProjectileToCover = async(left, top, initialPosition) => {
                }
             }
         }
-        index--;
+        isPlayerShooting ? index-- : index++;
     }
 }
 
@@ -188,11 +249,6 @@ const checkCollisionBeamToEnemies = (left, top) => {
     }
 }
 
-const calculateCollisionBeam = (left, top) => {
-    if(top >= COVER[0].y[0] + HEIGTH_BEAM_PLAYER) checkCollisionProjectileToCover(left, top, NUMBER_SECTIONS_COVER);
-    checkCollisionBeamToEnemies(left, top);
-}
-
 const shootToEnemies = (left, top) => {
     const battlefield = document.querySelector('.battlefield');
     if(!beamActive){
@@ -206,7 +262,8 @@ const shootToEnemies = (left, top) => {
             if(top >= 0){
                 top -= 5;
                 beam.style.top = top + 'px';
-                calculateCollisionBeam(left, top);
+                if(top >= COVER[0].y[0] + HEIGTH_PROJECTILE) checkCollisionProjectileToCover(left, top, NUMBER_SECTIONS_COVER, true);
+                checkCollisionBeamToEnemies(left, top);
             }else{
                 animationExplosion(beam, false, 500);
                 destroyBeam(); 
@@ -247,6 +304,10 @@ const addKeyboardListener = () => {
                 shootToEnemies(left + 16, top - 12);
                 break;
             }
+            case 'n': {
+                shootToPlayer();
+                break;
+            }
             default: break;
         }
     });
@@ -277,7 +338,8 @@ const moveYEnemies = () => {
 
 const movementEnemies = () => {
     let direction = 'rigth';
-    
+    let cont = 0;
+
     intervalMovEnemies = setInterval(async() => {
         if( direction === 'rigth'){
             moveXEnemies(1);
@@ -300,6 +362,8 @@ const movementEnemies = () => {
                 await sleep(speed);
             }
         }
+        cont ++;
+        if(cont % 4 === 0) shootToPlayer();
     }, speed);
 }
 
