@@ -19,6 +19,8 @@ let PLAYER = {
     bodyCount: 0
 };
 
+let missiles = [];
+
 let intervalMovEnemies = 0;
 let intervalBeamMov = 0;
 let intervalMissilesMov = 0;
@@ -30,7 +32,7 @@ let leftLastEnemy = 10;
 
 const MEASUREMENT_SECTION_COVER = 13;
 const HEIGTH_PROJECTILE = 10;
-const NUMBER_SECTIONS_COVER = 16;
+const NUMBER_SECTIONS_COVER = 15;
 const WIDTH_ENEMY_TYPE_B_C = 30;
 const HEIGTH_ENEMY_TYPE_B_C = 28;
 const WIDTH_ENEMY_TYPE_A = 23;
@@ -107,10 +109,11 @@ const endGame = () => {
     console.log('The End');
 }
 
-const createMissile = (coord) => {
+const createMissile = (coord, order) => {
     const battlefield = document.querySelector('.battlefield');
     const missile = document.createElement('div');
     missile.classList = 'missile-enemy';
+    missile.classList.add(`missile-${order}`);
     missile.style.top = `${coord.y}px`; 
     missile.style.left = `${coord.x}px`; 
     battlefield.appendChild(missile);
@@ -118,7 +121,6 @@ const createMissile = (coord) => {
 }
 
 const shootToPlayer = async() => {
-    let missiles = [];
     let missile1;
     let missile2;
     let timerSecondMissile = 0;
@@ -127,26 +129,25 @@ const shootToPlayer = async() => {
         let line = Math.floor(randomEnemy / 11);
         let index = randomEnemy % 11;
         if(ENEMIES[line].destroyed[index] === 0)  missiles.push({ 
-            id: randomEnemy,
             active: false,
-            type: ENEMIES[line].points === 30 ? 'A' : 'BC',
             x: ENEMIES[line].x[index] + (ENEMIES[line].points === 30 ? (WIDTH_ENEMY_TYPE_A / 2) - 1 : (WIDTH_ENEMY_TYPE_B_C / 2) - 1),
             y: ENEMIES[line].y + (ENEMIES[line].points === 30 ? WIDTH_ENEMY_TYPE_A : HEIGTH_ENEMY_TYPE_B_C), 
         }); 
     }
-    missile1 = createMissile(missiles[0]);
-    console.log(missiles);
+    missile1 = createMissile(missiles[0], 0);
+    //console.log(missiles);
     missiles[0].active = true;
     intervalMissilesMov = setInterval(() => {
         if(timerSecondMissile === 4){
-            missile2 = createMissile(missiles[1]);
+            missile2 = createMissile(missiles[1], 1);
             missiles[1].active = true;
         } 
         if(missiles[0].active){
             if(missiles[0].y <= TOP_POSITION_PLAYER){
                 missiles[0].y += 5;
                 missile1.style.top = missiles[0].y + 'px';
-                if(missiles[0].y + HEIGTH_PROJECTILE >= COVER[0].y[0]) checkCollisionProjectileToCover(missiles[0].x, missiles[0].y, 0, false);
+                if(missiles[0].y + HEIGTH_PROJECTILE >= COVER[0].y[0]) 
+                    checkCollisionProjectileToCover(missiles[0].x, missiles[0].y, 0, false, 0);
             }else{
                 missile1.remove();
                 missiles[0].active = false;
@@ -156,12 +157,17 @@ const shootToPlayer = async() => {
             if(missiles[1].y <= TOP_POSITION_PLAYER){
                 missiles[1].y += 5;
                 missile2.style.top = missiles[1].y + 'px';
+                if(missiles[1].y + HEIGTH_PROJECTILE >= COVER[0].y[0]) 
+                    checkCollisionProjectileToCover(missiles[1].x, missiles[1].y, 0, false, 1);
             }else{
                 missile2.remove();
                 missiles[1].active = false;
             }    
         }
-        if(!missiles[0].active && !missiles[1].active) clearInterval(intervalMissilesMov);
+        if(!missiles[0].active && !missiles[1].active){
+            clearInterval(intervalMissilesMov);
+            missiles = [];
+        } 
         timerSecondMissile++;
     },12);   
 }
@@ -173,20 +179,27 @@ const destroyBeam = () => {
     beamActive = false;
 }
 
-const checkCollisionProjectileToCover = async(left, top, initialPosition, isPlayerShooting) => {
+const destroyMissile = (order) => {
+    const missile = document.querySelector(`.missile-${order}`);
+    missile.remove();
+    missiles[order].active = false;
+    if(!missiles[0].active && !missiles[1].active) clearInterval(intervalMissilesMov);
+}
+
+const checkCollisionProjectileToCover = async(left, top, initialPosition, isPlayerShooting, order) => {
     let notFound = true;
     let numCover;
     let index = -1;
 
-    COVER.forEach((cover, numCover) => {
+    COVER.forEach((cover, indexCover) => {
         if(left >= cover.x[0] && left <= cover.x[cover.x.length - 1] + MEASUREMENT_SECTION_COVER) {
-            numCover = numCover;
-            isPlayerShooting ? index = initialPosition - 1 : index = 0;
+            numCover = indexCover;
+            index = initialPosition;
         }
     });
-
-    while(notFound && index >= 0){   
     
+    while(notFound && index !== -1 ){   
+        
         if(left >= COVER[numCover].x[index] && left <= COVER[numCover].x[index] + MEASUREMENT_SECTION_COVER){
             if(top >= COVER[numCover].y[index] && top <= COVER[numCover].y[index] + MEASUREMENT_SECTION_COVER){
                const section = document.querySelector(`#section-${numCover}-${index + 1}`);
@@ -195,7 +208,7 @@ const checkCollisionProjectileToCover = async(left, top, initialPosition, isPlay
                 case 0: {
                     notFound = false;
                     COVER[numCover].impacts[index] = 1;
-                    destroyBeam();
+                    isPlayerShooting ? destroyBeam() : destroyMissile(order);
                     animationExplosion(section, false, 200);
                     section.classList.add('damaged-section-down');
                     break;
@@ -203,7 +216,7 @@ const checkCollisionProjectileToCover = async(left, top, initialPosition, isPlay
                 case 1: {
                     notFound = false;
                     COVER[numCover].impacts[index] = 2;
-                    destroyBeam();
+                    isPlayerShooting ? destroyBeam() : destroyMissile(order);
                     animationExplosion(section, false, 210);
                     section.classList.add('destroyed');
                     break;
@@ -213,7 +226,9 @@ const checkCollisionProjectileToCover = async(left, top, initialPosition, isPlay
             }
         }
         isPlayerShooting ? index-- : index++;
-    }
+        if(isPlayerShooting && index < 0) notFound = false;
+        if(!isPlayerShooting && index > NUMBER_SECTIONS_COVER) notFound = false;
+    } 
 }
 
 const animationExplosion = async(element, isEnemy, ms) => {
