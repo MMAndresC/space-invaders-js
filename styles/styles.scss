@@ -194,6 +194,14 @@ body{
         content: URL('../images/explosion.png');
         transition: ease-out 0.2s;
     }
+
+    &-player{
+        width: 50px;
+        height: 50px;
+        content: URL('../images/explosion.png');
+        transition: ease-in-out 5s;
+        z-index: 3;
+    }
 }
 
 .player{

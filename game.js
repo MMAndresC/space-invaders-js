@@ -29,6 +29,7 @@ let speed = 1000;
 let score = 0;
 let leftFirstEnemy = 0;
 let leftLastEnemy = 10;
+let bottomEnemy = { line: 4, position: 10 };
 
 const MEASUREMENT_SECTION_COVER = 13;
 const HEIGTH_PROJECTILE = 10;
@@ -38,6 +39,9 @@ const HEIGTH_ENEMY_TYPE_B_C = 28;
 const WIDTH_ENEMY_TYPE_A = 23;
 const HEIGTH_ENEMY_TYPE_A = 25;
 const TOP_POSITION_PLAYER = 518;
+const WIDTH_PLAYER = 35;
+const MARGIN_SCREEN_PLAYER = 20.5;
+const WIDTH_SCREEN = 600;
 
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -105,7 +109,18 @@ const drawCover = () => {
     } 
 }
 
-const endGame = () => {
+const endGame = (idMissile) => {
+    //idMissile 0 & 1 -> destruction by missile
+    //idMissile 3 -> destruction by enemy crashed into player
+    //idMissile -1 -> player wins, all enemies destroyed
+    if(idMissile === 0 || idMissile === 1){
+        const missile = document.querySelector(`.missile-${idMissile}`);
+        missile.remove();
+    } 
+    //Animacion de la explosion y cartel de game over
+    clearInterval(intervalBeamMov);
+    clearInterval(intervalMissilesMov);
+    clearInterval(intervalMovEnemies);
     console.log('The End');
 }
 
@@ -135,7 +150,6 @@ const shootToPlayer = async() => {
         }); 
     }
     missile1 = createMissile(missiles[0], 0);
-    //console.log(missiles);
     missiles[0].active = true;
     intervalMissilesMov = setInterval(() => {
         if(timerSecondMissile === 4){
@@ -148,6 +162,7 @@ const shootToPlayer = async() => {
                 missile1.style.top = missiles[0].y + 'px';
                 if(missiles[0].y + HEIGTH_PROJECTILE >= COVER[0].y[0]) 
                     checkCollisionProjectileToCover(missiles[0].x, missiles[0].y, 0, false, 0);
+                if(checkCollisionMissileToPlayer(missiles[0].x, missiles[0].y)) endGame(0);
             }else{
                 missile1.remove();
                 missiles[0].active = false;
@@ -159,6 +174,7 @@ const shootToPlayer = async() => {
                 missile2.style.top = missiles[1].y + 'px';
                 if(missiles[1].y + HEIGTH_PROJECTILE >= COVER[0].y[0]) 
                     checkCollisionProjectileToCover(missiles[1].x, missiles[1].y, 0, false, 1);
+                if(checkCollisionMissileToPlayer(missiles[1].x, missiles[1].y)) endGame(1);
             }else{
                 missile2.remove();
                 missiles[1].active = false;
@@ -252,16 +268,39 @@ const checkCollisionBeamToEnemies = (left, top) => {
                     const enemy = document.querySelector(`.enemy-${line}.position-${index}`);
                     animationExplosion(enemy, true, 200);
                     enemy.classList.toggle('destroyed');
+                    //Recalculate limits left & rigth of screen to movement of enemies
                     leftFirstEnemy = ENEMIES[0].destroyed.indexOf(0);
                     leftLastEnemy = ENEMIES[0].destroyed.lastIndexOf(0);
+                    //Recalculate bottom enemy to control collision with player
+                    if(ENEMIES[bottomEnemy.line].destroyed[bottomEnemy.position] === 1){
+                        let findNotDestroyed = -1;
+                        for(let line = 4; line >=0 && findNotDestroyed === -1; line--){
+                            findNotDestroyed = ENEMIES[line].destroyed.lastIndexOf(0);
+                            if(findNotDestroyed !== -1){
+                                bottomEnemy.line = line;
+                                bottomEnemy.position = findNotDestroyed;
+                            }
+                        }
+                    }
                     score += ENEMIES[line].points;
                     const spanScore = document.querySelector('.points-player-one');
                     spanScore.textContent = score;
-                    if(PLAYER.bodyCount === 55) endGame();
+                    if(PLAYER.bodyCount === 55) endGame(-1);
                 }
             });
         }
     }
+}
+
+const checkCollisionMissileToPlayer = (left, top) => {
+    if(top >= PLAYER.y){
+        if(left >= PLAYER.x && left <= PLAYER.x + WIDTH_PLAYER){
+            const player = document.querySelector('.player');
+            player.classList.toggle('explosion-player');
+            return true;
+        }
+    }
+    return false;
 }
 
 const shootToEnemies = (left, top) => {
@@ -290,7 +329,7 @@ const shootToEnemies = (left, top) => {
 const addKeyboardListener = () => {
     const player = document.querySelector('.player');
     const battlefield = document.querySelector('.battlefield');
-    const maxWidthScreen = battlefield.offsetWidth - player.offsetWidth;
+    const maxWidthScreen = battlefield.offsetWidth - player.offsetWidth; 
     let leftPx = getComputedStyle(player).left;
     let left = Number(leftPx.slice(0, leftPx.length - 2)); 
     let topPx = getComputedStyle(player).top;
@@ -300,7 +339,7 @@ const addKeyboardListener = () => {
         switch (event.key){
             //controlar el movimiento no puede superar la pantalla establecida
             case 'ArrowRight': {
-                if(left + 9 <= maxWidthScreen){
+                if(left + 9 <= maxWidthScreen - MARGIN_SCREEN_PLAYER){
                     left += 9;
                     player.style.left = left + 'px';
                     PLAYER.x =  Number(getComputedStyle(player).left.slice(0,-2));
@@ -308,7 +347,7 @@ const addKeyboardListener = () => {
                 break;
             }
             case 'ArrowLeft' : {
-                if(left - 9 >= 1.5){
+                if(left - 9 >= 1.5 + MARGIN_SCREEN_PLAYER){
                     left -= 9;
                     player.style.left = left + 'px';
                     PLAYER.x =  Number(getComputedStyle(player).left.slice(0,-2));
@@ -331,7 +370,7 @@ const addKeyboardListener = () => {
 const moveXEnemies = (inc) => {
     const enemies = document.querySelectorAll('.enemy');
     for(let i = enemies.length - 1; i >= 0; i--){
-        let left = Number(enemies[i].style.left.slice(0, enemies[i].style.left.length - 1))
+        let left = Number(enemies[i].style.left.slice(0, -1))
         enemies[i].style.left = left + inc + '%';
         const line = enemies[i].classList[1].slice(-1);
         const pos = enemies[i].classList[2].split('-')[1];
@@ -343,37 +382,61 @@ const moveXEnemies = (inc) => {
 const moveYEnemies = () => {
     const enemies = document.querySelectorAll('.enemy');
     for(let i = enemies.length - 1; i >= 0; i--){
-        let top = Number(enemies[i].style.top.slice(0, enemies[i].style.top.length - 1))
+        let top = Number(enemies[i].style.top.slice(0, -1))
         enemies[i].style.top = top + 1 + '%';
         const line = enemies[i].classList[1].slice(-1);
         enemies[i].classList.toggle(`moving-${line}`);
         ENEMIES[line].y = Number(getComputedStyle(enemies[i]).top.slice(0,-2));
     }
+
+}
+
+const checkEnemiesCrashedIntoPlayer = (width) => {
+    for(let i = 0; i < 11; i++){
+        if(ENEMIES[bottomEnemy.line].destroyed[i] === 0){
+            if(ENEMIES[bottomEnemy.line].x[i] <= PLAYER.x + WIDTH_PLAYER && 
+                ENEMIES[bottomEnemy.line].x[i] >= PLAYER.x - width){
+                    return true;
+            }
+        }
+    }
+   return false;
 }
 
 const movementEnemies = () => {
     let direction = 'rigth';
     let cont = 0;
+    let heigth = 0;
+    let width = 0;
+    let playerZone = false;
 
     intervalMovEnemies = setInterval(async() => {
+        ENEMIES[bottomEnemy.line].points === 30 ? heigth = HEIGTH_ENEMY_TYPE_A : heigth = HEIGTH_ENEMY_TYPE_B_C;
+        ENEMIES[bottomEnemy.line].points === 30 ? width = WIDTH_ENEMY_TYPE_A : width =WIDTH_ENEMY_TYPE_B_C;
         if( direction === 'rigth'){
             moveXEnemies(1);
-            const enemy = document.getElementById(`${leftLastEnemy}`);
+            if(playerZone && checkEnemiesCrashedIntoPlayer(width)) endGame(3);
+            const enemy = document.getElementById(leftLastEnemy);
             const rigthLimitScreen = Number(enemy.style.left.slice(0, -1));
             if(rigthLimitScreen >= 90){
                 direction = 'left';
                 await sleep(speed);
                 moveYEnemies();
+                if(ENEMIES[bottomEnemy.line].y + heigth >= PLAYER.y) playerZone = true;
+                if(playerZone && checkEnemiesCrashedIntoPlayer(width)) endGame(3);
                 await sleep(speed);
             }
         }else{
             moveXEnemies(-1);
+            if(playerZone && checkEnemiesCrashedIntoPlayer(width)) endGame(3);
             const enemy = document.getElementById(leftFirstEnemy);
             const leftLimitScreen = Number(enemy.style.left.slice(0, -1));
             if(leftLimitScreen <= 5){
                 direction = 'rigth';
                 await sleep(speed);
                 moveYEnemies();
+                if(ENEMIES[bottomEnemy.line].y + heigth >= PLAYER.y) playerZone = true;
+                if(playerZone && checkEnemiesCrashedIntoPlayer(width)) endGame(3);
                 await sleep(speed);
             }
         }
@@ -391,13 +454,11 @@ const init = async() => {
     console.log(ENEMIES);
     //Funciones para poner en marcha el juego
     //Movimiento enemigos
-    //movementEnemies();
+    movementEnemies();
     addKeyboardListener();
     //Comienza el juego, terminara cuando todos los marcianos esten muertos o el player
     //El player muere cuando un misil impacte o cuando una nave enemiga choque con el
     //Quedan:
-    //Laser de los enemigos
-    //Funcion para detectar las colisiones con el player
     //Ir acelerando el juego segun se vaya puntuando?? nº de enemigos abatidos???
     //Movimiento de la nave bonus
    
