@@ -30,6 +30,8 @@ let score = 0;
 let leftFirstEnemy = 0;
 let leftLastEnemy = 10;
 let bottomEnemy = { line: 4, position: 10 };
+let direction = 'rigth';
+let paceShootings = 4;
 
 const MEASUREMENT_SECTION_COVER = 13;
 const HEIGTH_PROJECTILE = 10;
@@ -185,7 +187,7 @@ const shootToPlayer = async() => {
             missiles = [];
         } 
         timerSecondMissile++;
-    },12);   
+    },15);   
 }
 
 const destroyBeam = () => {
@@ -255,6 +257,32 @@ const animationExplosion = async(element, isEnemy, ms) => {
     element.classList.toggle(destroyClass);
 }
 
+const changeSpeedEnemies = () => {
+    let prevSpeed = speed;
+    if(score >= 150 && score < 350) speed = 850;
+    if(score >= 350 && score < 450) speed = 750;
+    if(score >= 450 && score < 500){
+        speed = 500;
+        paceShootings = 5;
+    }
+    if(score >= 500 && score < 550) speed = 400;
+    if(score >= 550 && score < 650){
+        speed = 300;
+        paceShootings = 6;
+    } 
+    if(score >= 650 && score < 850){
+        speed = 200;
+        paceShootings = 7;
+    } 
+    
+    if(PLAYER.bodyCount === 54) speed = 5;
+    
+    if(prevSpeed !== speed){
+        clearInterval(intervalMovEnemies);
+        movementEnemies();
+    }
+}
+
 const checkCollisionBeamToEnemies = (left, top) => {
     let size;
     for(let line = 4; line >= 0; line--){
@@ -285,6 +313,7 @@ const checkCollisionBeamToEnemies = (left, top) => {
                     score += ENEMIES[line].points;
                     const spanScore = document.querySelector('.points-player-one');
                     spanScore.textContent = score;
+                    changeSpeedEnemies();
                     if(PLAYER.bodyCount === 55) endGame(-1);
                 }
             });
@@ -358,10 +387,6 @@ const addKeyboardListener = () => {
                 shootToEnemies(left + 16, top - 12);
                 break;
             }
-            case 'n': {
-                shootToPlayer();
-                break;
-            }
             default: break;
         }
     });
@@ -383,7 +408,7 @@ const moveYEnemies = () => {
     const enemies = document.querySelectorAll('.enemy');
     for(let i = enemies.length - 1; i >= 0; i--){
         let top = Number(enemies[i].style.top.slice(0, -1))
-        enemies[i].style.top = top + 1 + '%';
+        enemies[i].style.top = top + 2 + '%';
         const line = enemies[i].classList[1].slice(-1);
         enemies[i].classList.toggle(`moving-${line}`);
         ENEMIES[line].y = Number(getComputedStyle(enemies[i]).top.slice(0,-2));
@@ -404,7 +429,6 @@ const checkEnemiesCrashedIntoPlayer = (width) => {
 }
 
 const movementEnemies = () => {
-    let direction = 'rigth';
     let cont = 0;
     let heigth = 0;
     let width = 0;
@@ -441,7 +465,7 @@ const movementEnemies = () => {
             }
         }
         cont ++;
-        if(cont % 4 === 0) shootToPlayer();
+        if(cont % paceShootings === 0 && PLAYER.bodyCount !== 54) shootToPlayer();
     }, speed);
 }
 
@@ -459,7 +483,6 @@ const init = async() => {
     //Comienza el juego, terminara cuando todos los marcianos esten muertos o el player
     //El player muere cuando un misil impacte o cuando una nave enemiga choque con el
     //Quedan:
-    //Ir acelerando el juego segun se vaya puntuando?? nº de enemigos abatidos???
     //Movimiento de la nave bonus
    
 }
