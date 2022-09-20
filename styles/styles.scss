@@ -4,6 +4,13 @@
     --main-bg-color: rgb(6, 0, 0);
     --cover-bg-color:  rgb(245, 8, 8);
     --player-color:  rgb(6, 250, 250);
+    --missile-enemy-color: rgb(243, 243, 11);
+    --enemy-width-type-a : 23px;
+    --enemy-heigth-type-a: 25px;
+    --enemy-width-type-b : 30px;
+    --enemy-heigth-type-b: 28px;
+    --ship-special-width: 45px;
+    --ship-special-heigth: 23px;
     --test-bg-aux: white;
 }
 
@@ -89,6 +96,8 @@ body{
     width: 45px;
     height: 23px;
     top: 10px;
+    left: -45px;
+    visibility: hidden;
     position: absolute;
 }
 
@@ -137,7 +146,7 @@ body{
 .missile-enemy{
     width: 2px;
     height: 10px;
-    background-color: black;//rgb(243, 243, 11);
+    background-color:  black;//rgb(243, 243, 11);
     position: absolute;
 }
 

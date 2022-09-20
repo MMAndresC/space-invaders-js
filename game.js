@@ -1,3 +1,18 @@
+const MEASUREMENT_SECTION_COVER = 13;
+const HEIGTH_PROJECTILE = 10;
+const NUMBER_SECTIONS_COVER = 15;
+const WIDTH_ENEMY_TYPE_B_C = 30;
+const HEIGTH_ENEMY_TYPE_B_C = 28;
+const WIDTH_ENEMY_TYPE_A = 23;
+const HEIGTH_ENEMY_TYPE_A = 25;
+const TOP_POSITION_PLAYER = 518;
+const WIDTH_PLAYER = 35;
+const MARGIN_SCREEN_PLAYER = 20.5;
+const WIDTH_SCREEN = 600;
+const WIDTH_SPECIAL_SHIP = 45;
+const HEIGTH_SPECIAL_SHIP = 23;
+const ADJUST_WIDTH_BEAM = 1;
+
 let ENEMIES = [
     { points: 30, y: 0, x: [], destroyed: [] },
     { points: 20, y: 0, x: [], destroyed: [] },
@@ -19,35 +34,35 @@ let PLAYER = {
     bodyCount: 0
 };
 
+let SHIP_SPECIAL = { 
+    x: -WIDTH_SPECIAL_SHIP, 
+    y: Number(getComputedStyle(document.querySelector('.ship-special')).top.slice(0,-2)),
+    points: 100 
+};
+
 let missiles = [];
 
 let intervalMovEnemies = 0;
 let intervalBeamMov = 0;
 let intervalMissilesMov = 0;
+let intervalMovSpecialShip = 0;
 let beamActive = false;
 let speed = 1000;
 let score = 0;
+let bonusPoints = 0;
 let leftFirstEnemy = 0;
 let leftLastEnemy = 10;
 let bottomEnemy = { line: 4, position: 10 };
 let direction = 'rigth';
 let paceShootings = 4;
+let isActiveShipSpecial = false;
+let timesActivatedShipSpecial = 0;
+let isEndGame = false;
 
-const MEASUREMENT_SECTION_COVER = 13;
-const HEIGTH_PROJECTILE = 10;
-const NUMBER_SECTIONS_COVER = 15;
-const WIDTH_ENEMY_TYPE_B_C = 30;
-const HEIGTH_ENEMY_TYPE_B_C = 28;
-const WIDTH_ENEMY_TYPE_A = 23;
-const HEIGTH_ENEMY_TYPE_A = 25;
-const TOP_POSITION_PLAYER = 518;
-const WIDTH_PLAYER = 35;
-const MARGIN_SCREEN_PLAYER = 20.5;
-const WIDTH_SCREEN = 600;
 
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
+}
 
 const drawEnemies = async() => {
     let cont = 0;
@@ -112,6 +127,7 @@ const drawCover = () => {
 }
 
 const endGame = (idMissile) => {
+    isEndGame = true;
     //idMissile 0 & 1 -> destruction by missile
     //idMissile 3 -> destruction by enemy crashed into player
     //idMissile -1 -> player wins, all enemies destroyed
@@ -123,7 +139,26 @@ const endGame = (idMissile) => {
     clearInterval(intervalBeamMov);
     clearInterval(intervalMissilesMov);
     clearInterval(intervalMovEnemies);
+    clearInterval(intervalMovSpecialShip);
     console.log('The End');
+}
+
+const activateShipSpecial = () => {
+    isActiveShipSpecial = true;
+    timesActivatedShipSpecial += 1;
+    const shipSpecial = document.querySelector('.ship-special');
+    shipSpecial.style.left = `${SHIP_SPECIAL.x}px`;
+    shipSpecial.style.visibility = 'visible';
+    intervalMovSpecialShip = setInterval(() => {
+        SHIP_SPECIAL.x += 15;
+        shipSpecial.style.left = `${SHIP_SPECIAL.x}px`;   
+        if(SHIP_SPECIAL.x >= WIDTH_SCREEN){
+            clearInterval(intervalMovSpecialShip);
+            isActiveShipSpecial = false;
+            SHIP_SPECIAL.x = -WIDTH_SPECIAL_SHIP; 
+            shipSpecial.style.visibility = 'hidden';
+        }
+    }, 120); 
 }
 
 const createMissile = (coord, order) => {
@@ -204,6 +239,54 @@ const destroyMissile = (order) => {
     if(!missiles[0].active && !missiles[1].active) clearInterval(intervalMissilesMov);
 }
 
+const animationExplosion = async(element, isEnemy, ms) => {
+    let destroyClass;
+    isEnemy ? destroyClass = 'explosion-enemy' : destroyClass = 'explosion-section-cover';
+    element.classList.toggle(destroyClass);
+    await sleep(ms);
+    element.classList.toggle(destroyClass);
+}
+
+const changeSpeedEnemies = () => {
+    let prevSpeed = speed;
+    if(score >= 150 && speed !== 850) speed = 850;
+    if(score >= 350 && speed !== 750) speed = 750;
+    if(score >= 450 && speed !== 500){
+        speed = 500;
+        paceShootings = 5;
+    }
+    if(score >= 500 && speed !== 400) speed = 400;
+    if(score >= 550 && speed !== 300){
+        speed = 300;
+        paceShootings = 6;
+    } 
+    if(score >= 650 && speed !== 200){
+        speed = 200;
+        paceShootings = 7;
+    } 
+    
+    if(PLAYER.bodyCount === 54) speed = 5;
+    
+    if(prevSpeed !== speed){
+        clearInterval(intervalMovEnemies);
+        movementEnemies();
+    }
+}
+
+const checkCollisionBeamToSpecialShip = (left) => {
+    const shipSpecial = document.querySelector('.ship-special');
+    if(left >= SHIP_SPECIAL.x - ADJUST_WIDTH_BEAM && left <= SHIP_SPECIAL.x + WIDTH_SPECIAL_SHIP + ADJUST_WIDTH_BEAM){
+        clearInterval(intervalMovSpecialShip);
+         animationExplosion(shipSpecial, true, 200);
+        shipSpecial.style.visibility = 'hidden';
+        isActiveShipSpecial = false;
+        SHIP_SPECIAL.x = -WIDTH_SPECIAL_SHIP;
+        bonusPoints += SHIP_SPECIAL.points;
+        const scoreboard = document.querySelector('.points-player-one');
+        scoreboard.textContent = `${score + bonusPoints}`;
+    }
+}
+
 const checkCollisionProjectileToCover = async(left, top, initialPosition, isPlayerShooting, order) => {
     let notFound = true;
     let numCover;
@@ -249,47 +332,13 @@ const checkCollisionProjectileToCover = async(left, top, initialPosition, isPlay
     } 
 }
 
-const animationExplosion = async(element, isEnemy, ms) => {
-    let destroyClass;
-    isEnemy ? destroyClass = 'explosion-enemy' : destroyClass = 'explosion-section-cover';
-    element.classList.toggle(destroyClass);
-    await sleep(ms);
-    element.classList.toggle(destroyClass);
-}
-
-const changeSpeedEnemies = () => {
-    let prevSpeed = speed;
-    if(score >= 150 && score < 350) speed = 850;
-    if(score >= 350 && score < 450) speed = 750;
-    if(score >= 450 && score < 500){
-        speed = 500;
-        paceShootings = 5;
-    }
-    if(score >= 500 && score < 550) speed = 400;
-    if(score >= 550 && score < 650){
-        speed = 300;
-        paceShootings = 6;
-    } 
-    if(score >= 650 && score < 850){
-        speed = 200;
-        paceShootings = 7;
-    } 
-    
-    if(PLAYER.bodyCount === 54) speed = 5;
-    
-    if(prevSpeed !== speed){
-        clearInterval(intervalMovEnemies);
-        movementEnemies();
-    }
-}
-
 const checkCollisionBeamToEnemies = (left, top) => {
     let size;
     for(let line = 4; line >= 0; line--){
         if(top >= ENEMIES[line].y && top <= ENEMIES[line].y + HEIGTH_ENEMY_TYPE_A){
             line === 0 ? size = WIDTH_ENEMY_TYPE_A : size = WIDTH_ENEMY_TYPE_B_C;
             ENEMIES[line].x.forEach((enemy, index) => {
-                if(left >= enemy - 1  && left <= enemy + size + 1 && ENEMIES[line].destroyed[index] != 1){
+                if(left >= enemy - ADJUST_WIDTH_BEAM  && left <= enemy + size + ADJUST_WIDTH_BEAM && ENEMIES[line].destroyed[index] != 1){
                     ENEMIES[line].destroyed[index] = 1;
                     PLAYER.bodyCount += 1;
                     destroyBeam();
@@ -310,9 +359,13 @@ const checkCollisionBeamToEnemies = (left, top) => {
                             }
                         }
                     }
+
                     score += ENEMIES[line].points;
+                    if(score >= 250 && timesActivatedShipSpecial === 0) activateShipSpecial();
+                    if(score >= 500 && timesActivatedShipSpecial === 1) activateShipSpecial();
+                    if(score >= 750 && timesActivatedShipSpecial === 2) activateShipSpecial();
                     const spanScore = document.querySelector('.points-player-one');
-                    spanScore.textContent = score;
+                    spanScore.textContent = `${score + bonusPoints}`;
                     changeSpeedEnemies();
                     if(PLAYER.bodyCount === 55) endGame(-1);
                 }
@@ -347,6 +400,9 @@ const shootToEnemies = (left, top) => {
                 beam.style.top = top + 'px';
                 if(top >= COVER[0].y[0] + HEIGTH_PROJECTILE) checkCollisionProjectileToCover(left, top, NUMBER_SECTIONS_COVER, true);
                 checkCollisionBeamToEnemies(left, top);
+                if(isActiveShipSpecial && top <= SHIP_SPECIAL.y + HEIGTH_SPECIAL_SHIP) {
+                    checkCollisionBeamToSpecialShip(left);
+                }
             }else{
                 animationExplosion(beam, false, 500);
                 destroyBeam(); 
@@ -415,7 +471,7 @@ const moveYEnemies = () => {
     }
 
 }
-
+//Rehacer esta funcion se pierde cuando llegan a la linea del jugador o el ultimo colisiona con el 
 const checkEnemiesCrashedIntoPlayer = (width) => {
     for(let i = 0; i < 11; i++){
         if(ENEMIES[bottomEnemy.line].destroyed[i] === 0){
@@ -465,7 +521,7 @@ const movementEnemies = () => {
             }
         }
         cont ++;
-        if(cont % paceShootings === 0 && PLAYER.bodyCount !== 54) shootToPlayer();
+        if(cont % paceShootings === 0 && PLAYER.bodyCount !== 54 && !isEndGame) shootToPlayer();
     }, speed);
 }
 
@@ -484,6 +540,7 @@ const init = async() => {
     //El player muere cuando un misil impacte o cuando una nave enemiga choque con el
     //Quedan:
     //Movimiento de la nave bonus
+    //Endgame
    
 }
 
