@@ -1,7 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 :root {
-  --main-bg-color: rgb(6, 0, 0);
+  --main-bg-color: #000108;
   --cover-bg-color: rgb(245, 8, 8);
+  --game-over-text: rgb(229, 11, 11);
   --player-color: rgb(6, 250, 250);
   --missile-enemy-color: rgb(243, 243, 11);
   --enemy-width-type-a: 23px;
@@ -10,7 +11,7 @@
   --enemy-heigth-type-b: 28px;
   --ship-special-width: 45px;
   --ship-special-heigth: 23px;
-  --test-bg-aux: white;
+  --regular-color-font-: white;
 }
 
 * {
@@ -26,13 +27,14 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  background-image: url("../images/stardust.png");
+  background-color: var(--main-bg-color);
 }
 
 .screen {
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 1px solid black;
   width: 600px;
   height: 750px;
   margin: 5% 0;
@@ -128,7 +130,7 @@ body {
 .missile-enemy {
   width: 2px;
   height: 10px;
-  background-color: black;
+  background-color: var(--missile-enemy-color);
   position: absolute;
 }
 
@@ -140,25 +142,25 @@ body {
 }
 
 .border-up-left {
-  background-color: var(--test-bg-aux);
+  background-color: var(--main-bg-color);
   background-image: URL("../images/borderLeft.png");
 }
 .border-up-rigth {
-  background-color: var(--test-bg-aux);
+  background-color: var(--main-bg-color);
   background-image: URL("../images/borderRigth.png");
 }
 
 .border-down-left {
-  background-color: var(--test-bg-aux);
+  background-color: var(--main-bg-color);
   background-image: URL("../images/arcLeft.png");
 }
 .border-down-rigth {
-  background-color: var(--test-bg-aux);
+  background-color: var(--main-bg-color);
   background-image: URL("../images/arcRigth.png");
 }
 
 .damaged-section-down {
-  background-color: var(--test-bg-aux);
+  background-color: var(--main-bg-color);
   background-image: URL("../images/first_impact_down.png");
 }
 
@@ -225,4 +227,50 @@ body {
   height: 10px;
   background-color: var(--player-color);
   position: absolute;
+}
+
+.game-over {
+  height: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  position: absolute;
+  z-index: 5;
+  visibility: hidden;
+  top: 30%;
+  background-color: var(--main-bg-color);
+  color: var(--regular-color-font-);
+  border-color: var(--player-color);
+  border-width: 10px;
+  border-style: solid;
+}
+.game-over a {
+  text-decoration: none;
+  color: inherit;
+  font-size: 2rem;
+  margin: 5px 5px;
+}
+.game-over a:hover {
+  color: var(--player-color);
+}
+.game-over-text {
+  margin: 0 15px;
+  font-size: 3.5rem;
+  color: var(--game-over-text);
+}
+.game-over .final-score {
+  color: var(--player-color);
+  font-size: 1.2rem;
+  margin: 0 5px;
+}
+.game-over .retry {
+  height: 30%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+.game-over .retry span {
+  font-size: 2rem;
 }/*# sourceMappingURL=styles.css.map */

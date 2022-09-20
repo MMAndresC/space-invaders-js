@@ -139,8 +139,14 @@ const endGame = (idMissile) => {
     clearInterval(intervalMissilesMov);
     clearInterval(intervalMovEnemies);
     clearInterval(intervalMovSpecialShip);
+    document.removeEventListener('keydown', addKeyboardListener);
     const player = document.querySelector('.player');
     player.classList.toggle('explosion-player');
+    const gameOverScreen = document.querySelector('.game-over');
+    gameOverScreen.style.visibility = 'visible';
+    const finalScore = document.querySelector('.final-score');
+    idMissile >= 0 ? finalScore.textContent = `YOU LOSE, TOTAL SCORE: ${bonusPoints + score}` 
+        : finalScore.textContent = `YOU WIN, TOTAL SCORE: ${bonusPoints + score}` 
 }
 
 const activateShipSpecial = () => {
@@ -409,7 +415,7 @@ const shootToEnemies = (left, top) => {
     }
 }
 
-const addKeyboardListener = () => {
+const addKeyboardListener = (event) => {
     const player = document.querySelector('.player');
     const battlefield = document.querySelector('.battlefield');
     const maxWidthScreen = battlefield.offsetWidth - player.offsetWidth; 
@@ -417,33 +423,29 @@ const addKeyboardListener = () => {
     let left = Number(leftPx.slice(0, leftPx.length - 2)); 
     let topPx = getComputedStyle(player).top;
     let top = Number(topPx.slice(0, topPx.length - 2)); 
-        
-    document.addEventListener('keydown', function(event){
-        switch (event.key){
-            //controlar el movimiento no puede superar la pantalla establecida
-            case 'ArrowRight': {
-                if(left + 9 <= maxWidthScreen - MARGIN_SCREEN_PLAYER){
-                    left += 9;
-                    player.style.left = left + 'px';
-                    PLAYER.x =  Number(getComputedStyle(player).left.slice(0,-2));
-                }
-                break;
+    switch (event.key){
+        case 'ArrowRight': {
+            if(left + 9 <= maxWidthScreen - MARGIN_SCREEN_PLAYER){
+                left += 9;
+                player.style.left = left + 'px';
+                PLAYER.x =  Number(getComputedStyle(player).left.slice(0,-2));
             }
-            case 'ArrowLeft' : {
-                if(left - 9 >= 1.5 + MARGIN_SCREEN_PLAYER){
-                    left -= 9;
-                    player.style.left = left + 'px';
-                    PLAYER.x =  Number(getComputedStyle(player).left.slice(0,-2));
-                }
-                break;
-            }
-            case ' ' : {
-                shootToEnemies(left + 16, top - 12);
-                break;
-            }
-            default: break;
+            break;
         }
-    });
+        case 'ArrowLeft' : {
+            if(left - 9 >= 1.5 + MARGIN_SCREEN_PLAYER){
+                left -= 9;
+                player.style.left = left + 'px';
+                PLAYER.x =  Number(getComputedStyle(player).left.slice(0,-2));
+            }
+            break;
+        }
+        case ' ' : {
+            shootToEnemies(left + 16, top - 12);
+            break;
+        }
+        default: break;
+    }
 }
 
 const moveXEnemies = (inc) => {
@@ -524,7 +526,7 @@ const init = async() => {
     drawCover();
     await drawEnemies(); 
     movementEnemies();
-    addKeyboardListener();
+    document.addEventListener('keydown', addKeyboardListener)
     //Comienza el juego, terminara cuando todos los marcianos esten muertos o el player
     //El player muere cuando un misil impacte o cuando una nave enemiga choque con el
     //Quedan:
