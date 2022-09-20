@@ -135,12 +135,12 @@ const endGame = (idMissile) => {
         const missile = document.querySelector(`.missile-${idMissile}`);
         missile.remove();
     } 
-    //Animacion de la explosion y cartel de game over
     clearInterval(intervalBeamMov);
     clearInterval(intervalMissilesMov);
     clearInterval(intervalMovEnemies);
     clearInterval(intervalMovSpecialShip);
-    console.log('The End');
+    const player = document.querySelector('.player');
+    player.classList.toggle('explosion-player');
 }
 
 const activateShipSpecial = () => {
@@ -262,7 +262,7 @@ const changeSpeedEnemies = () => {
     } 
     if(score >= 650 && speed !== 200){
         speed = 200;
-        paceShootings = 7;
+        paceShootings = 8;
     } 
     
     if(PLAYER.bodyCount === 54) speed = 5;
@@ -377,8 +377,6 @@ const checkCollisionBeamToEnemies = (left, top) => {
 const checkCollisionMissileToPlayer = (left, top) => {
     if(top >= PLAYER.y){
         if(left >= PLAYER.x && left <= PLAYER.x + WIDTH_PLAYER){
-            const player = document.querySelector('.player');
-            player.classList.toggle('explosion-player');
             return true;
         }
     }
@@ -471,15 +469,11 @@ const moveYEnemies = () => {
     }
 
 }
-//Rehacer esta funcion se pierde cuando llegan a la linea del jugador o el ultimo colisiona con el 
-const checkEnemiesCrashedIntoPlayer = (width) => {
-    for(let i = 0; i < 11; i++){
-        if(ENEMIES[bottomEnemy.line].destroyed[i] === 0){
-            if(ENEMIES[bottomEnemy.line].x[i] <= PLAYER.x + WIDTH_PLAYER && 
-                ENEMIES[bottomEnemy.line].x[i] >= PLAYER.x - width){
+
+const checkLastEnemyCrashIntoPlayer = (width) => {
+    if(ENEMIES[bottomEnemy.line].x[bottomEnemy.position] <= PLAYER.x + WIDTH_PLAYER && 
+        ENEMIES[bottomEnemy.line].x[bottomEnemy.position] >= PLAYER.x - width){
                     return true;
-            }
-        }
     }
    return false;
 }
@@ -495,20 +489,20 @@ const movementEnemies = () => {
         ENEMIES[bottomEnemy.line].points === 30 ? width = WIDTH_ENEMY_TYPE_A : width =WIDTH_ENEMY_TYPE_B_C;
         if( direction === 'rigth'){
             moveXEnemies(1);
-            if(playerZone && checkEnemiesCrashedIntoPlayer(width)) endGame(3);
+            if(playerZone && PLAYER.bodyCount === 54 && checkLastEnemyCrashIntoPlayer(width)) endGame(3);
             const enemy = document.getElementById(leftLastEnemy);
             const rigthLimitScreen = Number(enemy.style.left.slice(0, -1));
             if(rigthLimitScreen >= 90){
                 direction = 'left';
                 await sleep(speed);
                 moveYEnemies();
-                if(ENEMIES[bottomEnemy.line].y + heigth >= PLAYER.y) playerZone = true;
-                if(playerZone && checkEnemiesCrashedIntoPlayer(width)) endGame(3);
+                if(ENEMIES[bottomEnemy.line].y + heigth > PLAYER.y) playerZone = true;
+                if(playerZone && PLAYER.bodyCount < 54) endGame(3);
                 await sleep(speed);
             }
         }else{
             moveXEnemies(-1);
-            if(playerZone && checkEnemiesCrashedIntoPlayer(width)) endGame(3);
+            if(playerZone && PLAYER.bodyCount === 54 && checkLastEnemyCrashIntoPlayer(width)) endGame(3);
             const enemy = document.getElementById(leftFirstEnemy);
             const leftLimitScreen = Number(enemy.style.left.slice(0, -1));
             if(leftLimitScreen <= 5){
@@ -516,7 +510,7 @@ const movementEnemies = () => {
                 await sleep(speed);
                 moveYEnemies();
                 if(ENEMIES[bottomEnemy.line].y + heigth >= PLAYER.y) playerZone = true;
-                if(playerZone && checkEnemiesCrashedIntoPlayer(width)) endGame(3);
+                if(playerZone && PLAYER.bodyCount < 54) endGame(3);
                 await sleep(speed);
             }
         }
@@ -527,21 +521,14 @@ const movementEnemies = () => {
 
 
 const init = async() => {
-    //Funciones para pintar la pantalla
     drawCover();
-    console.log(COVER);
     await drawEnemies(); 
-    console.log(ENEMIES);
-    //Funciones para poner en marcha el juego
-    //Movimiento enemigos
     movementEnemies();
     addKeyboardListener();
     //Comienza el juego, terminara cuando todos los marcianos esten muertos o el player
     //El player muere cuando un misil impacte o cuando una nave enemiga choque con el
     //Quedan:
-    //Movimiento de la nave bonus
     //Endgame
-   
 }
 
 init();
