@@ -259,12 +259,12 @@ const changeSpeedEnemies = () => {
     if(score >= 350 && speed !== 750) speed = 750;
     if(score >= 450 && speed !== 500){
         speed = 500;
-        paceShootings = 5;
+        paceShootings = 6;
     }
     if(score >= 500 && speed !== 400) speed = 400;
     if(score >= 550 && speed !== 300){
         speed = 300;
-        paceShootings = 6;
+        paceShootings = 7;
     } 
     if(score >= 650 && speed !== 200){
         speed = 200;
