@@ -50,8 +50,8 @@ let beamActive = false;
 let speed = 1000;
 let score = 0;
 let bonusPoints = 0;
-let leftFirstEnemy = 0;
-let leftLastEnemy = 10;
+let firstColumnEnemy = {line: 0, position: 0};
+let lastColumnEnemy = {line: 0, position: 10};
 let bottomEnemy = { line: 4, position: 10 };
 let direction = 'rigth';
 let paceShootings = 4;
@@ -338,6 +338,32 @@ const checkCollisionProjectileToCover = async(left, top, initialPosition, isPlay
     } 
 }
 
+const recalculateLimitLeftEnemies = () => {
+    let findFirstNotDestroyed = false;
+    for(let column = firstColumnEnemy.position; column <= 10 && !findFirstNotDestroyed; column++){
+        for(let line = 0; line < 5 && !findFirstNotDestroyed; line++){
+            if(ENEMIES[line].destroyed[column] !== 1){
+                findFirstNotDestroyed = true;
+                firstColumnEnemy.line = line;
+                firstColumnEnemy.position = column;
+            }
+        }
+    }
+}
+
+const recalculateLimitRigthEnemies = () => {
+    let findFirstNotDestroyed = false;
+    for(let column = lastColumnEnemy.position; column >= 0 && !findFirstNotDestroyed; column--){
+        for(let line = 0; line < 5; line++){
+            if(ENEMIES[line].destroyed[column] !== 1 && !findFirstNotDestroyed){
+                findFirstNotDestroyed = true;
+                lastColumnEnemy.line = line;
+                lastColumnEnemy.position = column;
+            }
+        }
+    }
+}
+
 const checkCollisionBeamToEnemies = (left, top) => {
     let size;
     for(let line = 4; line >= 0; line--){
@@ -352,8 +378,8 @@ const checkCollisionBeamToEnemies = (left, top) => {
                     animationExplosion(enemy, true, 200);
                     enemy.classList.toggle('destroyed');
                     //Recalculate limits left & rigth of screen to movement of enemies
-                    leftFirstEnemy = ENEMIES[0].destroyed.indexOf(0);
-                    leftLastEnemy = ENEMIES[0].destroyed.lastIndexOf(0);
+                    if(ENEMIES[firstColumnEnemy.line].destroyed[firstColumnEnemy.position] === 1) recalculateLimitLeftEnemies();
+                    if(ENEMIES[lastColumnEnemy.line].destroyed[lastColumnEnemy.position] === 1) recalculateLimitRigthEnemies();
                     //Recalculate bottom enemy to control collision with player
                     if(ENEMIES[bottomEnemy.line].destroyed[bottomEnemy.position] === 1){
                         let findNotDestroyed = -1;
@@ -492,7 +518,7 @@ const movementEnemies = () => {
         if( direction === 'rigth'){
             moveXEnemies(1);
             if(playerZone && PLAYER.bodyCount === 54 && checkLastEnemyCrashIntoPlayer(width)) endGame(3);
-            const enemy = document.getElementById(leftLastEnemy);
+            const enemy = document.getElementById((lastColumnEnemy.line * 11) + lastColumnEnemy.position);
             const rigthLimitScreen = Number(enemy.style.left.slice(0, -1));
             if(rigthLimitScreen >= 90){
                 direction = 'left';
@@ -505,7 +531,7 @@ const movementEnemies = () => {
         }else{
             moveXEnemies(-1);
             if(playerZone && PLAYER.bodyCount === 54 && checkLastEnemyCrashIntoPlayer(width)) endGame(3);
-            const enemy = document.getElementById(leftFirstEnemy);
+            const enemy = document.getElementById((firstColumnEnemy.line * 11) + firstColumnEnemy.position);
             const leftLimitScreen = Number(enemy.style.left.slice(0, -1));
             if(leftLimitScreen <= 5){
                 direction = 'rigth';
