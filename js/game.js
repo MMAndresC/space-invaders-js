@@ -364,6 +364,17 @@ const recalculateLimitRigthEnemies = () => {
     }
 }
 
+const recalculateLimitBottomEnemies = () => {
+    let findNotDestroyed = -1;
+    for(let line = 4; line >=0 && findNotDestroyed === -1; line--){
+        findNotDestroyed = ENEMIES[line].destroyed.lastIndexOf(0);
+        if(findNotDestroyed !== -1){
+            bottomEnemy.line = line;
+            bottomEnemy.position = findNotDestroyed;
+        }
+    }
+}
+
 const checkCollisionBeamToEnemies = (left, top) => {
     let size;
     for(let line = 4; line >= 0; line--){
@@ -381,17 +392,7 @@ const checkCollisionBeamToEnemies = (left, top) => {
                     if(ENEMIES[firstColumnEnemy.line].destroyed[firstColumnEnemy.position] === 1) recalculateLimitLeftEnemies();
                     if(ENEMIES[lastColumnEnemy.line].destroyed[lastColumnEnemy.position] === 1) recalculateLimitRigthEnemies();
                     //Recalculate bottom enemy to control collision with player
-                    if(ENEMIES[bottomEnemy.line].destroyed[bottomEnemy.position] === 1){
-                        let findNotDestroyed = -1;
-                        for(let line = 4; line >=0 && findNotDestroyed === -1; line--){
-                            findNotDestroyed = ENEMIES[line].destroyed.lastIndexOf(0);
-                            if(findNotDestroyed !== -1){
-                                bottomEnemy.line = line;
-                                bottomEnemy.position = findNotDestroyed;
-                            }
-                        }
-                    }
-
+                    if(ENEMIES[bottomEnemy.line].destroyed[bottomEnemy.position] === 1) recalculateLimitBottomEnemies();
                     score += ENEMIES[line].points;
                     if(score >= 250 && timesActivatedShipSpecial === 0) activateShipSpecial();
                     if(score >= 500 && timesActivatedShipSpecial === 1) activateShipSpecial();
