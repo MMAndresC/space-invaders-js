@@ -254,7 +254,7 @@ a:hover {
   position: absolute;
   z-index: 5;
   visibility: hidden;
-  top: 30%;
+  top: 25%;
   background-color: var(--main-bg-color);
   color: var(--regular-color-font-);
   border-color: var(--player-color);
