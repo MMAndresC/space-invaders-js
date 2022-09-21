@@ -6,6 +6,9 @@
     --game-over-text:  rgb(229, 11, 11);
     --player-color:  rgb(6, 250, 250);
     --missile-enemy-color: rgb(243, 243, 11);
+    --enemies-typeA-color: rgb(128, 243, 38);
+    --enemies-typeB-color: rgb(236, 127, 68);
+    --enemies-typeC-color: rgb(188, 54, 217);
     --enemy-width-type-a : 23px;
     --enemy-heigth-type-a: 25px;
     --enemy-width-type-b : 30px;
@@ -31,6 +34,20 @@ body{
     background-image: url('../images/stardust.png');
     background-color: var(--main-bg-color);
 }
+
+a{
+    text-decoration: none;
+    color: inherit;
+    font-size: 2rem;
+    margin: 10px 10px 0 0;
+}
+
+a:hover{
+    color: var(--player-color);
+    text-decoration: underline;
+    font-size: 2.1rem;
+}
+
 
 .screen{
     display: flex;
@@ -279,17 +296,7 @@ body{
     border-width: 10px;
     border-style: solid;
 
-    a{
-        text-decoration: none;
-        color: inherit;
-        font-size: 2rem;
-        margin: 5px 5px;
-    }
-
-    a:hover{
-        color: var(--player-color);
-    }
-
+    
     &-text{
         margin: 0 15px;
         font-size: 3.5rem;
@@ -314,6 +321,93 @@ body{
        }
     }
 }
+
+.copyrigth{
+    color: var(--player-color);
+    position: absolute;
+    top: 80%;
+}
+
+.manual{
+    top: 10%;
+    position: absolute;
+    color: rgb(19, 200, 19);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    p{
+        margin: 0 0 50px 0;
+    }
+
+    div{
+        display: flex;
+        margin: 0 0 10px 0;
+        align-items: baseline;
+    }
+
+    figure{
+        width: var(--ship-special-width);
+        height: var(--enemy-heigth-type-b);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    &-enemies{
+        display: flex;
+        flex-direction: column;
+
+        &-bonus{
+            width: var(--ship-special-width);
+            height: var(--ship-special-heigth);
+        }
+
+        &-type-A{
+            width: var(--enemy-width-type-a);
+            height: var(--enemy-heigth-type-a);
+        }
+
+        &-type-BC{
+            width: var(--enemy-width-type-b);
+            height: var(--enemy-heigth-type-b);
+        }
+
+        &-text-bonus{
+            color: var(--cover-bg-color);
+        }
+        
+        &-text-typeA{
+            color: var(--enemies-typeA-color);
+        }
+
+        &-text-typeB{
+            color: var(--enemies-typeB-color);
+        }
+
+        &-text-typeC{
+            color: var(--enemies-typeC-color);
+        }
+    }
+}
+
+@keyframes pulsing{
+    from{ 
+        opacity: 0%;
+    }
+    to { 
+        opacity: 100%;
+    }
+}
+
+.game-link{
+    color: var(--regular-color-font-);
+    margin: 30px 0 0 0;
+    animation: pulsing 1s ease-in-out  infinite alternate;
+}
+
+
 
 
 
