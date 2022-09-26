@@ -553,11 +553,7 @@ const init = async() => {
     drawCover();
     await drawEnemies(); 
     movementEnemies();
-    document.addEventListener('keydown', addKeyboardListener)
-    //Comienza el juego, terminara cuando todos los marcianos esten muertos o el player
-    //El player muere cuando un misil impacte o cuando una nave enemiga choque con el
-    //Quedan:
-    //Endgame
+    document.addEventListener('keydown', addKeyboardListener);
 }
 
 init();
